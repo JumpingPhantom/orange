@@ -1,0 +1,5 @@
+for i in 0, 10 {
+  let something = 12;
+  let another = 12;
+  let foobar = -((something / 2) + (another * 2));
+}
