@@ -48,62 +48,61 @@ pub enum TokenType {
     LessEqual,
     BangEqual,
 
+    And,
+    Or,
+
     EOF,
 }
 
 impl Display for TokenType {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            // Single-character symbols
-            TokenType::Dot => write!(f, "."),
-            TokenType::Comma => write!(f, ","),
-            TokenType::LeftParenthesis => write!(f, "("),
-            TokenType::RightParenthesis => write!(f, ")"),
-            TokenType::LeftBracket => write!(f, "["),
-            TokenType::RightBracket => write!(f, "]"),
-            TokenType::LeftBrace => write!(f, "{{"),
-            TokenType::RightBrace => write!(f, "}}"),
-            TokenType::QuestionMark => write!(f, "?"),
-            TokenType::Semicolon => write!(f, ";"),
-            TokenType::Bang => write!(f, "!"),
+            Self::Dot => write!(f, "."),
+            Self::Comma => write!(f, ","),
+            Self::LeftParenthesis => write!(f, "("),
+            Self::RightParenthesis => write!(f, ")"),
+            Self::LeftBracket => write!(f, "["),
+            Self::RightBracket => write!(f, "]"),
+            Self::LeftBrace => write!(f, "{{"),
+            Self::RightBrace => write!(f, "}}"),
+            Self::QuestionMark => write!(f, "?"),
+            Self::Semicolon => write!(f, ";"),
+            Self::Bang => write!(f, "!"),
 
-            // Arithmetic operators
-            TokenType::Plus => write!(f, "+"),
-            TokenType::Minus => write!(f, "-"),
-            TokenType::Asterisk => write!(f, "*"),
-            TokenType::Slash => write!(f, "/"),
-            TokenType::Percent => write!(f, "%"),
-            TokenType::Caret => write!(f, "^"),
+            Self::Plus => write!(f, "+"),
+            Self::Minus => write!(f, "-"),
+            Self::Asterisk => write!(f, "*"),
+            Self::Slash => write!(f, "/"),
+            Self::Percent => write!(f, "%"),
+            Self::Caret => write!(f, "^"),
 
-            // Keywords
-            TokenType::If => write!(f, "if"),
-            TokenType::While => write!(f, "while"),
-            TokenType::Do => write!(f, "do"),
-            TokenType::Else => write!(f, "else"),
-            TokenType::For => write!(f, "for"),
-            TokenType::In => write!(f, "in"),
-            TokenType::Let => write!(f, "let"),
-            TokenType::Function => write!(f, "function"),
-            TokenType::Return => write!(f, "return"),
-            TokenType::Use => write!(f, "use"),
+            Self::If => write!(f, "if"),
+            Self::While => write!(f, "while"),
+            Self::Do => write!(f, "do"),
+            Self::Else => write!(f, "else"),
+            Self::For => write!(f, "for"),
+            Self::In => write!(f, "in"),
+            Self::Let => write!(f, "let"),
+            Self::Function => write!(f, "function"),
+            Self::Return => write!(f, "return"),
+            Self::Use => write!(f, "use"),
 
-            // Literals/Data types
-            TokenType::Identifier => write!(f, "identifier"),
-            TokenType::Number => write!(f, "number"),
-            TokenType::String => write!(f, "string"),
-            TokenType::Boolean => write!(f, "boolean"),
-
-            // Comparison and assignment operators
-            TokenType::Equal => write!(f, "="),
-            TokenType::EqualEqual => write!(f, "=="),
-            TokenType::Greater => write!(f, ">"),
-            TokenType::Less => write!(f, "<"),
-            TokenType::GreaterEqual => write!(f, ">="),
-            TokenType::LessEqual => write!(f, "<="),
+            Self::Identifier => write!(f, "identifier"),
+            Self::Number => write!(f, "number"),
+            Self::String => write!(f, "string"),
+            Self::Boolean => write!(f, "boolean"),
+            Self::Equal => write!(f, "="),
+            Self::EqualEqual => write!(f, "=="),
+            Self::Greater => write!(f, ">"),
+            Self::Less => write!(f, "<"),
+            Self::GreaterEqual => write!(f, ">="),
+            Self::LessEqual => write!(f, "<="),
             Self::BangEqual => write!(f, "!="),
 
-            // End of File
-            TokenType::EOF => write!(f, "EOF"),
+            Self::And => write!(f, "&&"),
+            Self::Or => write!(f, "||"),
+
+            Self::EOF => write!(f, "EOF"),
         }
     }
 }
@@ -289,6 +288,24 @@ impl Lexer {
                     }
                 }
 
+                c if c == '&' => {
+                    if matches!(iter.peek(), Some(&'&')) {
+                        iter.next();
+                        iter.next();
+                        self.col += 2;
+                        push_token!(TokenType::And, None);
+                    }
+                }
+
+                c if c == '|' => {
+                    if matches!(iter.peek(), Some(&'|')) {
+                        iter.next();
+                        iter.next();
+                        self.col += 2;
+                        push_token!(TokenType::Or, None);
+                    }
+                }
+
                 '#' => {
                     while let Some(c) = iter.next() {
                         self.col += 1;
@@ -313,5 +330,9 @@ impl Lexer {
         push_token!(TokenType::EOF, None);
 
         return self;
+    }
+
+    pub fn _d(&self) {
+        dbg!(&self.tokens);
     }
 }

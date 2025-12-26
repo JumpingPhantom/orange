@@ -45,10 +45,16 @@ enum Statement {
     },
     Expression(Expression),
 
-    Loop {
-        loop_type: TokenType,
-        condition: Option<Box<Expression>>,
-        body: Vec<Box<Statement>>,
+    For {
+        index: Expression,
+        start: Expression,
+        end: Expression,
+        body: Vec<Statement>,
+    },
+
+    While {
+        condition: Expression,
+        body: Vec<Statement>,
     },
 }
 
@@ -65,7 +71,8 @@ enum Statement {
  *  ranged      ::= for identifier in range '{' {statement} '}'
  *  range       ::= expression ',' expression
  *
- *  expression  ::= equality
+ *  expression  ::= logic_and {or logic_and}
+ *  logic_and   ::= equality {and equality}
  *  equality    ::= comparison {(bangequal | equalequal) comparison}
  *  comparison  ::= term {(greater | greaterequal | less | lessequal) term}
  *  term        ::= factor {(plus | minus) factor}
@@ -153,23 +160,10 @@ impl Parser {
             }
 
             TokenType::For => {
-                let mut stmts: Vec<Statement> = Vec::new();
+                let stmt = self.ranged();
+                self.expect(TokenType::RightBrace);
 
-                self.advance();
-                let ident = self.expression();
-                self.expect(TokenType::In);
-                let begin = self.expression();
-                self.expect(TokenType::Comma);
-                let end = self.expression();
-                self.expect(TokenType::LeftBrace);
-
-                while self.current().token_type != TokenType::RightBrace {
-                    stmts.push(self.statement());
-                }
-
-                dbg!(stmts);
-
-                panic!();
+                stmt
             }
 
             TokenType::While => {
@@ -184,6 +178,29 @@ impl Parser {
                 self.expect(TokenType::Semicolon);
                 Statement::Expression(expression)
             }
+        }
+    }
+
+    fn ranged(&mut self) -> Statement {
+        let mut stmts: Vec<Statement> = Vec::new();
+        // for ident in expr, expr {}
+        self.advance();
+        let ident = self.expression();
+        self.expect(TokenType::In);
+        let start = self.expression();
+        self.expect(TokenType::Comma);
+        let end = self.expression();
+        self.expect(TokenType::LeftBrace);
+
+        while self.current().token_type != TokenType::RightBrace {
+            stmts.push(self.statement());
+        }
+
+        Statement::For {
+            index: ident,
+            start,
+            end,
+            body: stmts,
         }
     }
 
@@ -204,7 +221,39 @@ impl Parser {
     }
 
     fn expression(&mut self) -> Expression {
-        self.equality()
+        let mut expression = self.logic_and();
+
+        while matches!(self.current().token_type, TokenType::Or) {
+            let operator = self.current().token_type.clone();
+            self.advance();
+            let rhs = self.logic_and();
+
+            expression = Expression::Binary {
+                lhs: Box::new(expression),
+                operator: operator,
+                rhs: Box::new(rhs),
+            }
+        }
+
+        expression
+    }
+
+    fn logic_and(&mut self) -> Expression {
+        let mut expression = self.equality();
+
+        while matches!(self.current().token_type, TokenType::And) {
+            let operator = self.current().token_type.clone();
+            self.advance();
+            let rhs = self.equality();
+
+            expression = Expression::Binary {
+                lhs: Box::new(expression),
+                operator: operator,
+                rhs: Box::new(rhs),
+            }
+        }
+
+        expression
     }
 
     fn equality(&mut self) -> Expression {
